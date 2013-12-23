@@ -11,7 +11,6 @@
 #include <math.h>
 #include "ECS.h"
 
-// Test
 
 class PositionComponent : public Grynca::Component<PositionComponent>
 {
