@@ -16,6 +16,24 @@ Grynca::EntityManager::EntityManager()
 	_entities.reserve(ENTITIES_INITIAL_CAPACITY);
 }
 
+Grynca::EntityManager::~EntityManager()
+{
+	for (unsigned int ent_id=0; ent_id<_entities.size(); ++ent_id)
+	{
+		Entity& e = _entities[ent_id];
+		// delete components of entities
+		for (unsigned int comp_family=0; comp_family<MAX_COMPONENTS; comp_family++)
+		{
+			if (e._components_mask[comp_family])
+			{
+				uint8_t* deleted_comp_ptr = _components.getData(comp_family, ent_id);
+				_components._destructors[comp_family](deleted_comp_ptr);
+			}
+		}
+
+	}
+}
+
 
 Grynca::Entity* Grynca::EntityManager::addEntity()
 {
@@ -45,11 +63,21 @@ void Grynca::EntityManager::deleteEntity(Grynca::Entity* entity)
 
 	unsigned int deleted_local_id = entity->localIndex();
 	unsigned int last_local_id = _entities.size()-1;
+	Entity& deleted_entity_slot = _entities[deleted_local_id];
+	for (unsigned int comp_family=0; comp_family<MAX_COMPONENTS; comp_family++)
+	// explicitely call destructors for components of deleted entity
+	{
+		if (deleted_entity_slot._components_mask[comp_family])
+		{
+			uint8_t* deleted_comp_ptr = _components.getData(comp_family, deleted_local_id);
+			_components._destructors[comp_family](deleted_comp_ptr);
+		}
+	}
+
 	if (deleted_local_id != last_local_id )
 	// deleting non-last entity
 	{
-		// move last entity to created hole
-		Entity& deleted_entity_slot = _entities[deleted_local_id];
+		// swap last entity with deleted entity
 		Entity& last_entity_slot = _entities[last_local_id];
 		deleted_entity_slot._guid = last_entity_slot._guid;
 		deleted_entity_slot._components_mask = last_entity_slot._components_mask;

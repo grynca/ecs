@@ -21,6 +21,7 @@ namespace Grynca
 		template<typename Derived, typename... Comps> friend class System;
 	public:
 		EntityManager();
+		virtual ~EntityManager();
 
 		// TODO: some way at construction to register systems and components
 
@@ -58,9 +59,26 @@ namespace Grynca
 
 		unsigned int entitiesCount();
 		unsigned int registeredComponentsCount();
-		// TODO: registereSystemsCount()
+		// TODO: registeredSystemsCount()
 	protected:
+		// TODO:
+		virtual void _registerComponents() = 0;
+		virtual void _registerEntities() = 0;
+		virtual void _registerSystems() = 0;
+
+
 		void _doubleCapacity();
+
+
+		struct EntityDataPos
+		{
+			uint32_t pool_id;	// type id of entity
+			uint32_t pool_pos;	// where are data for entity's components in pool
+		};
+
+		// mapping from global entity id to EntityDataPos
+		std::map<uint32_t, EntityDataPos> _entities_pos_map;
+
 
 		Components _components;
 		Systems	   _systems;

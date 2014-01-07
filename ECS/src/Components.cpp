@@ -13,7 +13,7 @@ Grynca::Components::Components(unsigned int initial_capacity)
 	assert(initial_capacity > 0);
 }
 
-std::vector<uint8_t>& Grynca::Components::getData(unsigned int component_family_id)
+std::vector<uint8_t>& Grynca::Components::getAllData(unsigned int component_family_id)
 {
 	return _data[component_family_id];
 }

@@ -16,6 +16,10 @@ class PositionComponent : public Grynca::Component<PositionComponent>
 {
 public:
 	PositionComponent(float px, float py, float r) : x(px), y(py), rot(r) {}
+	~PositionComponent()
+	{
+		//std::cout << "Destroying position component." << std::endl;
+	}
 
 	float x, y;
 	float rot;
@@ -82,8 +86,9 @@ int main(int argc, char* argv[])
 		//std::cout << "Added entity: " << new_entity->guid() << std::endl;
 	}
 
+	float run_time = 0.0f;
 	clock_t last_clock = clock();
-	while(1)
+	while(run_time < 10.0f)
 	{
 		// wait at least for one millisecond elapsed
 		clock_t now = clock();
@@ -94,6 +99,7 @@ int main(int argc, char* argv[])
 		MovementSystem& ms = em.getSystem<MovementSystem>();
 		if (dt > 0)
 			ms.update(dt);
+		run_time += dt;
 	}
 
 	return EXIT_SUCCESS;

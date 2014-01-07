@@ -17,12 +17,14 @@ namespace Grynca
 	class Components
 	{
 		friend class EntityManager;
+		// component destructor func
+		typedef void (*DestructorFunc)(uint8_t*);
 	public:
 		Components(unsigned int initial_capacity);
 
 		// get data for all components of certain family_id
 		//		( size will be larger than needed for entity comps, because of preallocation )
-		std::vector<uint8_t>& getData(unsigned int component_family_id);
+		std::vector<uint8_t>& getAllData(unsigned int component_family_id);
 		// get single component data
 		uint8_t* getData(unsigned int component_family_id, unsigned int entity_id);
 		template <typename Comp>
@@ -40,6 +42,8 @@ namespace Grynca
 		// _data[component_family][entity_id*sizeof(comp)]
 		std::vector<unsigned int> _comps_sizes;
 		std::vector<std::vector<uint8_t> > _data;
+		// ptrs to destructors for components
+		std::vector<DestructorFunc> _destructors;
 		unsigned int _capacity;
 	};
 
@@ -60,6 +64,7 @@ inline void Grynca::Components::registerComponent()
 	_data.resize(_data.size() +1);
 	_data.back().resize( sizeof(Comp)*_capacity );
 	_comps_sizes.push_back(sizeof(Comp));
+	_destructors.push_back(Comp::_destructor);
 }
 
 

@@ -24,6 +24,9 @@ namespace Grynca
 	private:
 		static void _setFamilyId(unsigned int f_id);
 		static int& _familyId();
+		// explicitly calls components destructor ( component is created with placement new )
+		// called by Components
+		static void _destructor(uint8_t* comp);
 	};
 }
 
@@ -51,6 +54,13 @@ inline int& Grynca::Component<Derived>::_familyId()
 	return _family_id;
 }
 
-
+template<typename Derived>
+inline void Grynca::Component<Derived>::_destructor(uint8_t* comp)
+// static
+{
+	assert(comp);
+	// call destructor explicitly
+	((Derived*)comp)->~Derived();
+}
 
 #endif /* COMPONENT_H_ */

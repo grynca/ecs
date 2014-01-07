@@ -25,8 +25,6 @@ namespace Grynca
 
 		// TODO: porovnavani ==, !=, mozna dalsi (na zaklade guid)
 
-		// TODO: isUpdatedBy<SystemType>(), canBeUpdatedBy<SystemType>() (pres SystemMask)
-
 		bool containsComponent(unsigned int component_family_id);
 
 		template <typename CompType>

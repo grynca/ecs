@@ -8,18 +8,6 @@
 #ifndef SYSTEMS_H_
 #define SYSTEMS_H_
 
-/*// TODO: udelat neco takovyhodle ( aby to interne jenom ++ pointery v poli dat pro komponenty )
-void update(ComponentsIterator<Position, Sprite>& components)
-{
-	while (components.next())
-	{
-		Position& pos = components.get<Position>();
-		Sprite& sprite = components.get<Sprite>();
-
-		// ...
-	}
-}*/
-
 #include <vector>
 
 namespace Grynca
