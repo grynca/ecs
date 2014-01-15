@@ -37,7 +37,7 @@ public:
 class MovementSystem : public Grynca::System<MovementSystem, PositionComponent, VelocityComponent>
 {
 public:
-	void updateImpl(float dt, Grynca::SystemIterator& it)
+	void updateImpl(float dt, Grynca::UpdateIterator& it)
 	{
 		while (it.next())
 		{
@@ -56,17 +56,53 @@ public:
 };
 
 
-class MyEntityManager : public Grynca::EntityManager
+class TestEntity : public Grynca::EntityType<TestEntity>
 {
 public:
+	static Grynca::Entity* create(Grynca::ECSManager& manager,
+								  float x_pos, float y_pos, float rot,
+								  float x_vel, float y_vel, float ang_vel)
+	{
+		Grynca::Entity* newent = manager.entities().addEntity(entityTypeId());
+		// add initial components
+		PositionComponent* pos = manager.entities().getComponent<PositionComponent>(newent);
+		VelocityComponent* vel = manager.entities().getComponent<VelocityComponent>(newent);
+		pos = {x_pos, y_pos, rot};
+		vel = {x_vel, y_vel, ang_vel};
+
+		return newent;
+	}
+
+	static const Grynca::ComponentsMask& componentsMask()
+	{
+		static Grynca::ComponentsMask mask = Grynca::ComponentsMaskCreator<PositionComponent, VelocityComponent>().mask;
+		return mask;
+	}
+
+	static const Grynca::SystemsMask& initialUpdateMask()
+	{
+		static Grynca::SystemsMask mask = Grynca::SystemsMaskCreator<MovementSystem>().mask;
+		return mask;
+	}
+};
+
+
+
+class MyEntityManager : public Grynca::ECSManager
+{
+public:
+
 	MyEntityManager()
 	{
 		// register components
-		_components.registerComponent<PositionComponent>();
-		_components.registerComponent<VelocityComponent>();
+		_registerComponent<PositionComponent>();
+		_registerComponent<VelocityComponent>();
 
-		// register systems ( must be after components )
-		_systems.registerSystem(new MovementSystem());
+		// register entities
+		_registerEntityType<TestEntity>(1024);
+
+		// register systems ( must be after components! )
+		_registerSystem(new MovementSystem());
 	}
 };
 
@@ -76,13 +112,9 @@ int main(int argc, char* argv[])
 
 	for (unsigned int i=0; i<1000000; i++)
 	{
-		Grynca::Entity* new_entity = em.addEntity();
 		float rand_rot = (float)(rand()%360)/180*3.14;
-		em.addComponent<PositionComponent>(new_entity, i, i*10, rand_rot);
-		em.addComponent<VelocityComponent>(new_entity, i, (float)i/2, 0.1f*i );
-		// this must be set after entity has all relevant components added
-		//if (i%999999==0)
-			new_entity->updateBySystem<MovementSystem>(true);
+		Grynca::Entity* new_entity = TestEntity::create(em, i, i*10, rand_rot,
+								  	  	  	  	        i, (float)i/2, 0.1f*i);
 		//std::cout << "Added entity: " << new_entity->guid() << std::endl;
 	}
 
@@ -96,7 +128,7 @@ int main(int argc, char* argv[])
 		last_clock = now;
 		std::cout << "dt= " << dt << std::endl;
 		// update systems
-		MovementSystem& ms = em.getSystem<MovementSystem>();
+		MovementSystem& ms = em.systems().get<MovementSystem>();
 		if (dt > 0)
 			ms.update(dt);
 		run_time += dt;

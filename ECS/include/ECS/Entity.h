@@ -16,76 +16,50 @@ namespace Grynca
 {
 	class Entity
 	{
-		friend class EntityManager;
+		friend class Entities;
 	public:
-		// index to local entity manager (will change in time (when deleting entities from manager) )
-		uint32_t localIndex() const;
 		// globally unique id of entity, only persistent identificator of entity
 		uint32_t guid() const;
 
+		uint32_t typeId() const;
+
 		// TODO: porovnavani ==, !=, mozna dalsi (na zaklade guid)
-
-		bool containsComponent(unsigned int component_family_id);
-
-		template <typename CompType>
-		bool containsComponent();
 
 		bool isUpdatedBySystem(unsigned int system_type_id);
 
 		template <typename SysType>
 		bool isUpdatedBySystem();
 
-		// set if entity should be upadted by system or not
+		// set updating by system (must have needed components by system or else system will ignore it)
 		void updateBySystem(unsigned int system_type_id, bool update);
 		template <typename SysType>
 		void updateBySystem(bool update);
 
-
-		template <typename SysType>
-		bool canBeUpdatedBySystem();
-
-
-		const ComponentsMask& getComponentsMask();
-		const SystemsMask& getSystemsMask();
+		// get update mask
+		const SystemsMask& updateMask();
 	private:
-		// created by EntityManager
-		Entity(uint32_t local_id, uint32_t guid);
+		// created by Entities
+		Entity(uint32_t type_id, uint32_t local_id, uint32_t guid, SystemsMask& initial_update_mask);
 
-		// mask of valid components
-		ComponentsMask _components_mask;
-		// mask of systems that update entity
-		SystemsMask	_systems_mask;
-		uint32_t _local_id;
+		uint32_t _type_id;
+		uint32_t _local_id;	// local id in entities pool
 		uint32_t _guid;
+		// mask of systems that update entity
+		SystemsMask	_update_mask;
+
 	};
-}
-
-
-template <typename CompType>
-inline bool Grynca::Entity::containsComponent()
-{
-	return containsComponent(CompType::familyId());
 }
 
 template <typename SysType>
 inline bool Grynca::Entity::isUpdatedBySystem()
 {
-	return isUpdatedBySystem(SysType::systemId());
+	return isUpdatedBySystem(SysType::systemTypeId());
 }
 
 template <typename SysType>
 void Grynca::Entity::updateBySystem(bool update)
 {
-	assert(canBeUpdatedBySystem<SysType>()
-			&& "Entity can't be updated by this system (is missing some components).");
-	updateBySystem(SysType::systemId(), update);
-}
-
-template <typename SysType>
-inline bool Grynca::Entity::canBeUpdatedBySystem()
-{
-	return ((_components_mask & SysType::neededComponentsMask())
-				== SysType::neededComponentsMask());
+	updateBySystem(SysType::systemTypeId(), update);
 }
 
 #endif /* ENTITY_H_ */

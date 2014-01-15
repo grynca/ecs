@@ -18,11 +18,10 @@ namespace Grynca
 	template<typename Derived>
 	class Component
 	{
-		friend class Components;
+		friend class ComponentsRegister;
 	public:
 		static int familyId();
 	private:
-		static void _setFamilyId(unsigned int f_id);
 		static int& _familyId();
 		// explicitly calls components destructor ( component is created with placement new )
 		// called by Components
@@ -35,15 +34,6 @@ inline int Grynca::Component<Derived>::familyId()
 // static
 {
 	return _familyId();
-}
-
-template<typename Derived>
-inline void Grynca::Component<Derived>::_setFamilyId(unsigned int f_id)
-// static
-{
-	assert(f_id < MAX_COMPONENTS
-			&& "You have too many components, change MAX_COMPONENTS if necessary.");
-	_familyId() = f_id;
 }
 
 template<typename Derived>

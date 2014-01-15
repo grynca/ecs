@@ -11,12 +11,13 @@
 #include <cassert>
 #include "ComponentsMaskCreator.h"
 #include "SystemIterator.h"
-#include "EntityManager.h"
+#include "ECSManager.h"
 
 namespace Grynca
 {
 	class BaseSystem
 	{
+		friend class ECSManager;
 	public:
 		BaseSystem()
 		 : _entity_manager(NULL)
@@ -26,10 +27,11 @@ namespace Grynca
 		virtual void update(float dt) = 0;
 		EntityManager& entityManager();
 	protected:
-		EntityManager* _entity_manager;
+		EntityManager* _entity_manager;		// will be set upon registration by ECSManager
 	};
 
 
+	/// Derived class must define updateImpl()
 	template <typename Derived, typename... Comps>
 	class System : public BaseSystem
 	{
@@ -37,16 +39,17 @@ namespace Grynca
 	public:
 		void update(float dt) override;
 
-		static unsigned int systemId();
 
+		static int systemTypeId();
+
+		// to check if components mask contains components needed by this system:
+		//		SysType::neededComponentsMask() & component_mask == SysType::neededComponentsMask()
 		static const ComponentsMask& neededComponentsMask();
 	private:
-		// register system to entity manager
-		void _registerSystem(unsigned int s_id, EntityManager& em);
 
-		static unsigned int& _systemId();
+		static int& _systemTypeId();
 
-		SystemIterator _system_it;
+		UpdateIterator _update_it;
 	};
 
 }
@@ -58,21 +61,41 @@ inline Grynca::EntityManager& Grynca::BaseSystem::entityManager()
 }
 
 template <typename Derived, typename ... Comps>
-inline void Grynca::System<Derived, Comps...>::update(float dt)
+inline void Grynca::System<Derived, Comps...>::updateEntities(Entities& entities, float dt)
 {
-	assert(systemId() != -1
+	assert(systemTypeId() != -1
 			&& "System must be registered.");
-	// reset iterator
-	_system_it.reset();
-	// call derived class's update
-	((Derived*)this)->updateImpl(dt, _system_it);
+
+	for (unsigned int pool_id=0; pool_id < entities._entity_pools.size(); ++pool_id)
+	{
+		if ((neededComponentsMask() & entities._entity_pools[pool_id].components_mask) == neededComponentsMask())
+			// pool contains components this system needs
+		{
+			_update_it.setPool(entities._entity_pools[pool_id]);
+			// call derived class's update
+			((Derived*)this)->updateImpl(dt, _update_it);
+		}
+	}
 }
 
+/*template <typename Derived, typename ... Comps>
+inline void Grynca::System<Derived, Comps...>::_registerSystem(unsigned int s_id, EntityManager& em)
+{
+	assert(s_id < MAX_SYSTEMS
+			&& "You have too many systems, change MAX_SYSTEMS if necessary.");
+	// set static system id
+	_systemId() = s_id;
+	_entity_manager = &em;
+	// create system iterator
+	_system_it.create(_entity_manager->_entities, s_id,
+					 _entity_manager->_components, neededComponentsMask());
+}*/
+
 template <typename Derived, typename ... Comps>
-inline unsigned int Grynca::System<Derived, Comps...>::systemId()
+inline int Grynca::System<Derived, Comps...>::systemTypeId()
 //static
 {
-	return _systemId();
+	return _systemTypeId();
 }
 
 template <typename Derived, typename ... Comps>
@@ -84,25 +107,11 @@ inline const Grynca::ComponentsMask& Grynca::System<Derived, Comps...>::neededCo
 }
 
 template <typename Derived, typename ... Comps>
-inline void Grynca::System<Derived, Comps...>::_registerSystem(unsigned int s_id, EntityManager& em)
-{
-	assert(s_id < MAX_SYSTEMS
-			&& "You have too many systems, change MAX_SYSTEMS if necessary.");
-	// set static system id
-	_systemId() = s_id;
-	_entity_manager = &em;
-	// create system iterator
-	_system_it.create(_entity_manager->_entities, s_id,
-					 _entity_manager->_components, neededComponentsMask());
-}
-
-template <typename Derived, typename ... Comps>
-inline unsigned int& Grynca::System<Derived, Comps...>::_systemId()
+inline int& Grynca::System<Derived, Comps...>::_systemTypeId()
 //static
 {
-	static unsigned int _system_id = -1;		// -1 means not registered
-	return _system_id;
+	static unsigned int _system_type_id = -1;		// -1 means not registered
+	return _system_type_id;
 }
-
 
 #endif /* SYSTEM_H_ */

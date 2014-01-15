@@ -8,9 +8,10 @@
 #ifndef ECS_H_
 #define ECS_H_
 
-#include "ECS/EntityManager.h"
-#include "ECS/System.h"
+#include "ECS/ECSManager.h"
 #include "ECS/Component.h"
+#include "ECS/EntityType.h"
+#include "ECS/System.h"
 
 
 
