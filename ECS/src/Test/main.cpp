@@ -67,8 +67,8 @@ public:
 		// add initial components
 		PositionComponent* pos = manager.entities().getComponent<PositionComponent>(newent);
 		VelocityComponent* vel = manager.entities().getComponent<VelocityComponent>(newent);
-		pos = {x_pos, y_pos, rot};
-		vel = {x_vel, y_vel, ang_vel};
+		*pos = {x_pos, y_pos, rot};
+		*vel = {x_vel, y_vel, ang_vel};
 
 		return newent;
 	}
@@ -95,14 +95,15 @@ public:
 	MyEntityManager()
 	{
 		// register components
-		_registerComponent<PositionComponent>();
-		_registerComponent<VelocityComponent>();
+		componentsRegister().registerComponent<PositionComponent>();
+		componentsRegister().registerComponent<VelocityComponent>();
+
+		// register systems ( must be after components! )s
+		systems().registerSystem(new MovementSystem());
 
 		// register entities
-		_registerEntityType<TestEntity>(1024);
+		entities().registerEntityType<TestEntity>(1024);
 
-		// register systems ( must be after components! )
-		_registerSystem(new MovementSystem());
 	}
 };
 
@@ -123,17 +124,22 @@ int main(int argc, char* argv[])
 	while(run_time < 10.0f)
 	{
 		// wait at least for one millisecond elapsed
-		clock_t now = clock();
-		float dt = (float)(now-last_clock)/CLOCKS_PER_SEC;
+		float dt;
+		clock_t now;
+		do
+		{
+			now = clock();
+			dt = (float)(now-last_clock)/CLOCKS_PER_SEC;
+		}
+		while (dt < 0.001f);
 		last_clock = now;
 		std::cout << "dt= " << dt << std::endl;
-		// update systems
-		MovementSystem& ms = em.systems().get<MovementSystem>();
-		if (dt > 0)
-			ms.update(dt);
+		// update all systems, in order as they were registered
+		em.updateAll(dt);
 		run_time += dt;
 	}
 
+	std::cout << "Ended" << std::endl;
 	return EXIT_SUCCESS;
 }
 

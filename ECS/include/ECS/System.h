@@ -9,25 +9,24 @@
 #define SYSTEM_H_
 
 #include <cassert>
-#include "ComponentsMaskCreator.h"
-#include "SystemIterator.h"
-#include "ECSManager.h"
+#include "MaskCreators.h"
+#include "UpdateIterator.h"
+#include "Entities.h"
 
 namespace Grynca
 {
+	// fw
+	class ECSManager;
+
 	class BaseSystem
 	{
 		friend class ECSManager;
 	public:
-		BaseSystem()
-		 : _entity_manager(NULL)
-		{}
 
 		virtual ~BaseSystem() {}
-		virtual void update(float dt) = 0;
-		EntityManager& entityManager();
-	protected:
-		EntityManager* _entity_manager;		// will be set upon registration by ECSManager
+
+		// updates provided entities with this system
+		virtual void updateEntities(Entities& entities, float dt) = 0;
 	};
 
 
@@ -37,8 +36,8 @@ namespace Grynca
 	{
 		friend class Systems;
 	public:
-		void update(float dt) override;
 
+		void updateEntities(Entities& entities, float dt) override;
 
 		static int systemTypeId();
 
@@ -48,16 +47,8 @@ namespace Grynca
 	private:
 
 		static int& _systemTypeId();
-
-		UpdateIterator _update_it;
 	};
 
-}
-
-inline Grynca::EntityManager& Grynca::BaseSystem::entityManager()
-{
-	assert(_entity_manager);
-	return *_entity_manager;
 }
 
 template <typename Derived, typename ... Comps>
@@ -66,30 +57,20 @@ inline void Grynca::System<Derived, Comps...>::updateEntities(Entities& entities
 	assert(systemTypeId() != -1
 			&& "System must be registered.");
 
+	// create update iterator
+	UpdateIterator update_it(systemTypeId(), neededComponentsMask());
+
 	for (unsigned int pool_id=0; pool_id < entities._entity_pools.size(); ++pool_id)
 	{
 		if ((neededComponentsMask() & entities._entity_pools[pool_id].components_mask) == neededComponentsMask())
-			// pool contains components this system needs
+		// pool contains components this system needs
 		{
-			_update_it.setPool(entities._entity_pools[pool_id]);
+			update_it.setPool(entities._entity_pools[pool_id]);
 			// call derived class's update
-			((Derived*)this)->updateImpl(dt, _update_it);
+			((Derived*)this)->updateImpl(dt, update_it);
 		}
 	}
 }
-
-/*template <typename Derived, typename ... Comps>
-inline void Grynca::System<Derived, Comps...>::_registerSystem(unsigned int s_id, EntityManager& em)
-{
-	assert(s_id < MAX_SYSTEMS
-			&& "You have too many systems, change MAX_SYSTEMS if necessary.");
-	// set static system id
-	_systemId() = s_id;
-	_entity_manager = &em;
-	// create system iterator
-	_system_it.create(_entity_manager->_entities, s_id,
-					 _entity_manager->_components, neededComponentsMask());
-}*/
 
 template <typename Derived, typename ... Comps>
 inline int Grynca::System<Derived, Comps...>::systemTypeId()
@@ -110,7 +91,7 @@ template <typename Derived, typename ... Comps>
 inline int& Grynca::System<Derived, Comps...>::_systemTypeId()
 //static
 {
-	static unsigned int _system_type_id = -1;		// -1 means not registered
+	static int _system_type_id = -1;		// -1 means not registered
 	return _system_type_id;
 }
 

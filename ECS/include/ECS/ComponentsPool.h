@@ -18,50 +18,13 @@ namespace Grynca
 	class ComponentsPool
 	{
 	public:
-		void init(ComponentsRegister& reg, ComponentsMask mask, unsigned int initial_capacity)
-		{
-			assert(initial_capacity > 0);
-
-			// in case of reinit
-			_components.clear();
-
-			_capacity = initial_capacity;
-
-			for (unsigned int comp_family_id=0; comp_family_id<mask.size(); ++comp_family_id)
-			{
-				if (mask[comp_family_id])
-				// component should be contained in pool
-				{
-					// resize vector of vectors
-					_components.resize(comp_family_id + 1);
-					// resize inner vector so it can hold initial capacity of components
-					_components.back().resize(_capacity * reg.componentSize(comp_family_id) );
-				}
-			}
-
-		}
-
+		void init(ComponentsRegister& reg, ComponentsMask mask, unsigned int initial_capacity);
 		// get data for components
-		std::vector<uint8_t>& getCompsData(unsigned int component_family_id)
-		{
-			assert(component_family_id < _components.size() );
-
-			return _components[component_family_id];
-		}
-
-		void doubleCapacity()
-		{
-			_capacity *=2;
-			for (unsigned int comp_family_id=0; comp_family_id<_components.size(); ++comp_family_id)
-			{
-				if (_components[comp_family_id].size() > 0)		// if this component type is contained
-					// double capacity of components array
-					_components[comp_family_id].resize(_components[comp_family_id].size()*2);
-			}
-		}
+		std::vector<uint8_t>& getCompsData(unsigned int component_family_id);
+		void doubleCapacity();
 
 		// get capacity - in number of entities
-		unsigned int capacity() { return _capacity; }
+		unsigned int capacity();
 	protected:
 
 
@@ -72,6 +35,55 @@ namespace Grynca
 		unsigned int _capacity;
 	};
 }
+
+
+inline void Grynca::ComponentsPool::init(ComponentsRegister& reg, ComponentsMask mask, unsigned int initial_capacity)
+{
+	assert(initial_capacity > 0);
+
+	// in case of reinit
+	_components.clear();
+
+	_capacity = initial_capacity;
+
+	for (unsigned int comp_family_id=0; comp_family_id<mask.size(); ++comp_family_id)
+	{
+		if (mask[comp_family_id])
+		// component should be contained in pool
+		{
+			// resize vector of vectors
+			_components.resize(comp_family_id + 1);
+			// resize inner vector so it can hold initial capacity of components
+			_components.back().resize(_capacity * reg.componentSize(comp_family_id) );
+		}
+	}
+
+}
+
+inline std::vector<uint8_t>& Grynca::ComponentsPool::getCompsData(unsigned int component_family_id)
+{
+	assert(component_family_id < _components.size() );
+
+	return _components[component_family_id];
+}
+
+inline void Grynca::ComponentsPool::doubleCapacity()
+{
+	_capacity *=2;
+	for (unsigned int comp_family_id=0; comp_family_id<_components.size(); ++comp_family_id)
+	{
+		if (_components[comp_family_id].size() > 0)		// if this component type is contained
+			// double capacity of components array
+			_components[comp_family_id].resize(_components[comp_family_id].size()*2);
+	}
+}
+
+inline unsigned int Grynca::ComponentsPool::capacity()
+{
+	return _capacity;
+}
+
+
 
 
 #endif /* COMPONENTSPOOL_H_ */

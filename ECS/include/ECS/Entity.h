@@ -62,4 +62,38 @@ void Grynca::Entity::updateBySystem(bool update)
 	updateBySystem(SysType::systemTypeId(), update);
 }
 
+inline uint32_t Grynca::Entity::guid() const
+{
+	return _guid;
+}
+
+inline uint32_t Grynca::Entity::typeId() const
+{
+	return _type_id;
+}
+
+inline bool Grynca::Entity::isUpdatedBySystem(unsigned int system_type_id)
+{
+	assert(system_type_id<MAX_SYSTEMS);
+	return _update_mask[system_type_id];
+}
+
+inline void Grynca::Entity::updateBySystem(unsigned int system_type_id, bool update)
+{
+	assert(system_type_id<MAX_SYSTEMS);
+	_update_mask[system_type_id] = update;
+}
+
+inline const Grynca::SystemsMask& Grynca::Entity::updateMask()
+{
+	return _update_mask;
+}
+
+inline Grynca::Entity::Entity(uint32_t type_id, uint32_t local_id, uint32_t guid, SystemsMask& initial_update_mask)
+ : _type_id(type_id), _local_id(local_id), _guid(guid),
+   _update_mask(initial_update_mask)
+{
+}
+
+
 #endif /* ENTITY_H_ */
