@@ -13,8 +13,6 @@
 
 namespace Grynca
 {
-	// TODO: some way to execute code on destruction of components
-	//		(they are in managed memory and destructors are not called)
 	template<typename Derived>
 	class Component
 	{

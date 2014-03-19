@@ -9,6 +9,7 @@
 #include <ctime>
 #include <iostream>
 #include <math.h>
+#include <limits>
 #include "ECS.h"
 
 
@@ -98,11 +99,12 @@ public:
 		componentsRegister().registerComponent<PositionComponent>();
 		componentsRegister().registerComponent<VelocityComponent>();
 
-		// register systems ( must be after components! )s
+        // register systems ( must be after components! )
 		systems().registerSystem(new MovementSystem());
 
 		// register entities
-		entities().registerEntityType<TestEntity>(1024);
+        unsigned int initial_cap = 1024;
+        entities().registerEntityType<TestEntity>(initial_cap);
 
 	}
 };
@@ -110,8 +112,11 @@ public:
 int main(int argc, char* argv[])
 {
 	MyEntityManager em;
+    unsigned int n_ents = 1000000;
+    srand(time(NULL));
 
-	for (unsigned int i=0; i<1000000; i++)
+    clock_t t = clock();
+    for (unsigned int i=0; i<n_ents; i++)
 	{
 		float rand_rot = (float)(rand()%360)/180*3.14;
 		Grynca::Entity* new_entity = TestEntity::create(em, i, i*10, rand_rot,
@@ -119,27 +124,41 @@ int main(int argc, char* argv[])
 		//std::cout << "Added entity: " << new_entity->guid() << std::endl;
 	}
 
-	float run_time = 0.0f;
-	clock_t last_clock = clock();
-	while(run_time < 10.0f)
-	{
-		// wait at least for one millisecond elapsed
-		float dt;
-		clock_t now;
-		do
-		{
-			now = clock();
-			dt = (float)(now-last_clock)/CLOCKS_PER_SEC;
-		}
-		while (dt < 0.001f);
-		last_clock = now;
-		std::cout << "dt= " << dt << std::endl;
-		// update all systems, in order as they were registered
-		em.updateAll(dt);
-		run_time += dt;
-	}
+    std::cout << " created " << n_ents << " entities in " << (float)(clock()-t)/CLOCKS_PER_SEC << " secs" << std::endl;
 
-	std::cout << "Ended" << std::endl;
+    float run_time = 0.0f;
+    float max_run_time = 10.0f;
+    unsigned int cycles_count = 0;
+    float max_update_time = std::numeric_limits<float>::min();
+    float min_update_time = std::numeric_limits<float>::max();
+
+    std::cout << "Updating entities for " << max_run_time << " seconds ..." << std::endl;
+    t = clock();
+    while(run_time < max_run_time)
+	{
+        clock_t now = clock();
+        float dt = (float)(now-t)/CLOCKS_PER_SEC;
+        t = now;
+
+        if (dt > 0)
+        {
+            if (dt < min_update_time)
+                min_update_time = dt;
+            if (dt > max_update_time)
+                max_update_time = dt;
+
+            // update all systems, in order as they were registered
+            em.updateAll(dt);
+            run_time += dt;
+            cycles_count++;
+        }
+	}
+    float avg_update_time = run_time/cycles_count;
+
+    std::cout << "Done." << std::endl;
+    std::cout << " iteration_time: avg= " << avg_update_time << ", min= "
+              << min_update_time << ", max= " << max_update_time << std::endl;
+
 	return EXIT_SUCCESS;
 }
 

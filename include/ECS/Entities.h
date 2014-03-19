@@ -13,14 +13,14 @@
 #include "CommonDefs.h"
 #include "Entity.h"
 #include <map>
+#include <string.h>
 
 namespace Grynca
 {
 	// internal structure
 	struct EntityPool
 	{
-		// mask of components that are contained in all entities of this type
-		ComponentsMask components_mask;
+        ComponentsMask components_mask;         // which components entities consist of
 		SystemsMask initial_update_mask;		// system mask of newly created entities
 
 		ComponentsPool components_pool;			// components data
