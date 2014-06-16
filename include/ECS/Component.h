@@ -8,47 +8,28 @@
 #ifndef COMPONENT_H_
 #define COMPONENT_H_
 
-#include <cassert>
-#include "EcsConfig.h"
+#include "ComponentsRegister.h"
 
-namespace Grynca
-{
-	template<typename Derived>
-	class Component
-	{
-		friend class ComponentsRegister;
-	public:
-		static int familyId();
-	private:
-		static int& _familyId();
-		// explicitly calls components destructor ( component is created with placement new )
-		// called by Components
-		static void _destructor(uint8_t* comp);
-	};
-}
+namespace Grynca {
 
-template<typename Derived>
-inline int Grynca::Component<Derived>::familyId()
-// static
-{
-	return _familyId();
-}
+    class ComponentBase
+    {
 
-template<typename Derived>
-inline int& Grynca::Component<Derived>::_familyId()
-// static
-{
-	static int _family_id = -1;		// -1 means not registered
-	return _family_id;
-}
+    };
 
-template<typename Derived>
-inline void Grynca::Component<Derived>::_destructor(uint8_t* comp)
-// static
-{
-	assert(comp);
-	// call destructor explicitly
-	((Derived*)comp)->~Derived();
+    template <typename Derived>
+    class Component : ComponentBase
+    {
+    public:
+        static const ComponentTypeInfo& getTypeInfoStatic() {
+            return ComponentsRegister::getComponentTypeInfo(Derived::typeId);
+        }
+
+        // default destruction, can be shadowed and changed in derived class
+        static void destroy(void* comp){
+            ((Derived*)comp)->~Derived();
+        }
+    };
 }
 
 #endif /* COMPONENT_H_ */

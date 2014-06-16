@@ -5,69 +5,77 @@
  *      Author: lutza
  */
 
-#ifndef COMPONENTSREGISTER_H_
-#define COMPONENTSREGISTER_H_
+#ifndef COMPONENTSREGISTER_H
+#define COMPONENTSREGISTER_H
 
-#include <cstddef>
 #include <vector>
 #include <cassert>
-#include "EcsConfig.h"
+#include <stdint.h>
+#include <string>
+#include <typeinfo>
+#include "CommonDefs.h"
 
-namespace Grynca
-{
-	class ComponentsRegister
-	{
-		typedef void (*DestructorFunc)(uint8_t*);
-	public:
-		template <typename Comp>
-		void registerComponent();
+namespace Grynca {
 
-		unsigned int componentSize(unsigned int component_family_id);
+    class ComponentTypeInfo {
+    public:
+        ComponentTypeInfo() : type_id(-1), component_size(0) {}
 
-		DestructorFunc componentDestructor(unsigned int component_family_id);
+        bool isRegistered()const { return type_id!=-1; }
 
-		unsigned int registeredComponentsCount();
-	private:
-		// internal struct
-		struct ComponentInfo
-		{
-			unsigned int component_size;
-			DestructorFunc destructor;
-		};
-		std::vector<ComponentInfo> _comps_info;
-	};
+        int type_id;
+        std::string name;
+        size_t component_size;
+    };
+
+    class ComponentsRegister {
+    public:
+        static const ComponentTypeInfo& getComponentTypeInfo(unsigned int type_id) {
+            assert(type_id < register_().size());
+            return register_()[type_id];
+        }
+        static size_t registeredComponentTypesCount() { return register_().size(); }
+
+        static void registerComponentType(const unsigned int component_type_id,
+                                          const std::string& name,
+                                          const size_t component_size)
+        {
+            if (component_type_id >= register_().size()) {
+                register_().resize(component_type_id+1);
+            }
+            assert(!register_()[component_type_id].isRegistered() && "Component type with this type-id is already registered.");
+#ifndef NDEBUG
+            std::cout << "[ComponentsRegister] Registering component name " << name << " to id " << component_type_id << std::endl;
+#endif
+            register_()[component_type_id].type_id = component_type_id;
+            register_()[component_type_id].name = name;
+            register_()[component_type_id].component_size = component_size;
+        }
+
+    protected:
+        // Static register for component types
+        static std::vector<ComponentTypeInfo>& register_() {
+            static std::vector<ComponentTypeInfo> reg;
+            return reg;
+        }
+    };
+
+    template <typename Derived>
+    static const ComponentTypeInfo& registerComponentType() {
+        ComponentsRegister::registerComponentType(Derived::typeId,
+                                                  typeid(Derived).name(),
+                                                  sizeof(Derived));
+        return ComponentsRegister::getComponentTypeInfo(Derived::typeId);
+    }
 }
 
-template <typename Comp>
-inline void Grynca::ComponentsRegister::registerComponent()
-{
-	assert(Comp::familyId() == -1
-			&& "Component is already registered.");
-	assert(_comps_info.size() < MAX_COMPONENTS
-			&& "You have too many components, change MAX_COMPONENTS if necessary.");
-
-	Comp::_familyId() = _comps_info.size();
-	_comps_info.push_back( {sizeof(Comp), Comp::_destructor} );
-}
+// must access typeInfo (static member in templated class) or compiler will optimize it out
+#define REGISTER_COMPONENT_TYPE(CType) static class CType##_Registrator_{ \
+    public: \
+    CType##_Registrator_() { \
+        Grynca::registerComponentType<CType>(); \
+    } \
+} CType##registrator_;
 
 
-inline unsigned int Grynca::ComponentsRegister::componentSize(unsigned int component_family_id)
-{
-	assert(component_family_id < _comps_info.size());
-	return _comps_info[component_family_id].component_size;
-}
-
-inline Grynca::ComponentsRegister::DestructorFunc Grynca::ComponentsRegister::componentDestructor(unsigned int component_family_id)
-{
-	assert(component_family_id < _comps_info.size());
-	return _comps_info[component_family_id].destructor;
-}
-
-inline unsigned int Grynca::ComponentsRegister::registeredComponentsCount()
-{
-	return _comps_info.size();
-}
-
-
-
-#endif /* COMPONENTSREGISTER_H_ */
+#endif /* COMPONENTSREGISTER_H */

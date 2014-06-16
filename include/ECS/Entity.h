@@ -8,92 +8,101 @@
 #ifndef ENTITY_H_
 #define ENTITY_H_
 
-#include "EcsConfig.h"
-#include "CommonDefs.h"
-#include <cassert>
+#include "TypeTuple.h"
+#include "EntityHeaderComponent.h"
+#include "Masks.h"
+
+namespace Grynca {
+    // fw
+    class SystemBase;
+    struct EntityTypeInfo;
+
+    class EntityBase {
+    public:
+        // get component data by component_type_id
+        void* get(unsigned int component_type_id);
+
+        template<typename ComponentType>
+        ComponentType* get();
+
+        bool canBeUpdatedBySystem(SystemBase* system);
+        bool isUpdatedBySystem(SystemBase* system);
+        void setUpdatingBySystem(SystemBase* system, bool set);
+
+        const EntityTypeInfo& getTypeInfo();
+    protected:
+        EntityBase(unsigned int entity_type_id) : entity_type_id_(entity_type_id) {}
+
+    private:
+        unsigned int entity_type_id_;
+        //updated_by_[system_id] == true if system updates this entity
+        std::vector<bool> updated_by_;
+    };
+
+    template <typename Derived, typename ... Comps>
+    class Entity : public EntityType<Derived>, public EntityBase {
+    public:
+        using ComponentsTuple = TypeTuple<Comps..., EntityHeaderComponent>;
+//        using EntityBase::get;      // otherwise it would be shadowed by templated get
+
+        static ComponentsMask<Comps..., EntityHeaderComponent>& getComponentsMask() {
+            static ComponentsMask<Comps..., EntityHeaderComponent> m;
+            return m;
+        }
+
+//        template <typename ComponentType>
+//        ComponentType& get() {
+//            return type_tuple_.get<ComponentType>();
+//        }
+
+    protected:
+        friend class EntitiesPool;
+
+        Entity() : EntityBase(Derived::typeId) {}
+
+        ComponentsTuple type_tuple_;
+    };
+}
+
+#include "EntitiesRegister.h"
+#include "EntityHeaderComponent.h"
+#include "System.h"
 
 namespace Grynca
 {
-	class Entity
-	{
-		friend class Entities;
-	public:
-		// globally unique id of entity, only persistent identificator of entity
-		uint32_t guid() const;
+    // get component data by component_type_id
+    inline void* EntityBase::get(unsigned int component_type_id) {
+        int offset = getTypeInfo().component_offsets[component_type_id];
+        if (offset == -1)
+            return NULL;
+        else
+            return ((uint8_t*)this)+sizeof(EntityBase)+offset;
+    }
 
-		uint32_t typeId() const;
+    template<typename ComponentType>
+    inline ComponentType* EntityBase::get() {
+        return (ComponentType*)get(ComponentType::typeId);
+    }
 
-		// TODO: porovnavani ==, !=, mozna dalsi (na zaklade guid)
+    inline const EntityTypeInfo& EntityBase::getTypeInfo() {
+        return EntitiesRegister::getEntityTypeInfo(entity_type_id_);
+    }
 
-		bool isUpdatedBySystem(unsigned int system_type_id);
+    inline bool EntityBase::canBeUpdatedBySystem(SystemBase* system) {
+        return (getTypeInfo().components_mask & system->neededComponentsMask()) == getTypeInfo().components_mask;
+    }
 
-		template <typename SysType>
-		bool isUpdatedBySystem();
+    inline bool EntityBase::isUpdatedBySystem(SystemBase* system) {
+        if (system->systemId() >= updated_by_.size())
+            return false;
+        return updated_by_[system->systemId()];
+    }
 
-		// set updating by system (must have needed components by system or else system will ignore it)
-		void updateBySystem(unsigned int system_type_id, bool update);
-		template <typename SysType>
-		void updateBySystem(bool update);
-
-		// get update mask
-		const SystemsMask& updateMask();
-	private:
-		// created by Entities
-		Entity(uint32_t type_id, uint32_t local_id, uint32_t guid, SystemsMask& initial_update_mask);
-
-		uint32_t _type_id;
-		uint32_t _local_id;	// local id in entities pool
-		uint32_t _guid;
-		// mask of systems that update entity
-		SystemsMask	_update_mask;
-
-	};
+    inline void EntityBase::setUpdatingBySystem(SystemBase* system, bool set) {
+        if (system->systemId() >= updated_by_.size())
+            updated_by_.resize(system->systemId()+1, false);
+        updated_by_[system->systemId()] = set;
+    }
 }
-
-template <typename SysType>
-inline bool Grynca::Entity::isUpdatedBySystem()
-{
-	return isUpdatedBySystem(SysType::systemTypeId());
-}
-
-template <typename SysType>
-void Grynca::Entity::updateBySystem(bool update)
-{
-	updateBySystem(SysType::systemTypeId(), update);
-}
-
-inline uint32_t Grynca::Entity::guid() const
-{
-	return _guid;
-}
-
-inline uint32_t Grynca::Entity::typeId() const
-{
-	return _type_id;
-}
-
-inline bool Grynca::Entity::isUpdatedBySystem(unsigned int system_type_id)
-{
-	assert(system_type_id<MAX_SYSTEMS);
-	return _update_mask[system_type_id];
-}
-
-inline void Grynca::Entity::updateBySystem(unsigned int system_type_id, bool update)
-{
-	assert(system_type_id<MAX_SYSTEMS);
-	_update_mask[system_type_id] = update;
-}
-
-inline const Grynca::SystemsMask& Grynca::Entity::updateMask()
-{
-	return _update_mask;
-}
-
-inline Grynca::Entity::Entity(uint32_t type_id, uint32_t local_id, uint32_t guid, SystemsMask& initial_update_mask)
- : _type_id(type_id), _local_id(local_id), _guid(guid),
-   _update_mask(initial_update_mask)
-{
-}
-
 
 #endif /* ENTITY_H_ */

@@ -10,9 +10,8 @@
 
 namespace Grynca
 {
-	const unsigned int ENTITIES_INITIAL_CAPACITY = 1000;
+    const unsigned int POOL_CHUNK_CAPACITY = 1024;
 	const unsigned int MAX_COMPONENTS = 64;
-	const unsigned int MAX_SYSTEMS = 64;
 }
 
 

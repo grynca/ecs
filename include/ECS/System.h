@@ -9,90 +9,74 @@
 #define SYSTEM_H_
 
 #include <cassert>
-#include "MaskCreators.h"
-#include "UpdateIterator.h"
-#include "Entities.h"
+#include <functional>
+#include "CommonDefs.h"
 
-namespace Grynca
-{
-	// fw
-	class ECSManager;
+namespace Grynca {
+    // fw
+    class EntitiesPool;
+    class EntityBase;
 
-	class BaseSystem
-	{
-		friend class ECSManager;
-	public:
+    class SystemBase {
+    public:
+        bool isPoolCompatible(const EntitiesPool& pool);
 
-		virtual ~BaseSystem() {}
+        // pool must be compatible
+        void updatePool(double dt, EntitiesPool& pool);
 
-		// updates provided entities with this system
-		virtual void updateEntities(Entities& entities, float dt) = 0;
-	};
+        unsigned int systemId() { return system_id_; }
+        const ComponentsMaskBits& neededComponentsMask() { return needed_components_; }
+    protected:
+        SystemBase() {}
 
+        virtual ~SystemBase() {}
 
-	/// Derived class must define updateImpl()
-	template <typename Derived, typename... Comps>
-	class System : public BaseSystem
-	{
-		friend class Systems;
-	public:
+        std::function<void(double, EntityBase*)> update_func_;
+        // components needed by this system
+        ComponentsMaskBits needed_components_;
+    private:
+        friend class ECSManager;
+        // set during construction by ECSmanager
+        unsigned int system_id_;
+    };
 
-		void updateEntities(Entities& entities, float dt) override;
+    //// Derived class must define updateImpl()
+    template <typename Derived, typename... Comps>
+    class System : public SystemBase
+    {
+    public:
+        System();
 
-		static int systemTypeId();
+//        // dummy create, can be shadowed with derived class
+//        void create() {}
 
-		// to check if components mask contains components needed by this system:
-		//		SysType::neededComponentsMask() & component_mask == SysType::neededComponentsMask()
-		static const ComponentsMask& neededComponentsMask();
-	private:
-
-		static int& _systemTypeId();
-	};
+        virtual ~System() {}
+    };
 
 }
 
-template <typename Derived, typename ... Comps>
-inline void Grynca::System<Derived, Comps...>::updateEntities(Entities& entities, float dt)
-{
-	assert(systemTypeId() != -1
-			&& "System must be registered.");
+#include "EntitiesPool.h"
+#include "Entity.h"
+#include "Masks.h"
 
-	// create update iterator
-	UpdateIterator update_it(systemTypeId(), neededComponentsMask());
+namespace Grynca {
+    inline bool SystemBase::isPoolCompatible(const EntitiesPool &pool) {
+        return (pool.getEntityTypeInfo().components_mask & needed_components_) == needed_components_;
+    }
 
-	for (unsigned int pool_id=0; pool_id < entities._entity_pools.size(); ++pool_id)
-	{
-		if ((neededComponentsMask() & entities._entity_pools[pool_id].components_mask) == neededComponentsMask())
-		// pool contains components this system needs
-		{
-			update_it.setPool(entities._entity_pools[pool_id]);
-			// call derived class's update
-			((Derived*)this)->updateImpl(dt, update_it);
-		}
-	}
+    // pool must be compatible
+    inline void SystemBase::updatePool(double dt, EntitiesPool& pool) {
+        pool.loopEntities(dt, update_func_);
+    }
+
+    template <typename Derived, typename... Comps>
+    inline System<Derived, Comps...>::System()
+    {
+        update_func_ = std::bind(&Derived::updateEntity, (Derived*)this, std::placeholders::_1, std::placeholders::_2);
+        needed_components_ = Grynca::ComponentsMask<Comps...>().bits;   // construct needed components mask
+    }
+
 }
 
-template <typename Derived, typename ... Comps>
-inline int Grynca::System<Derived, Comps...>::systemTypeId()
-//static
-{
-	return _systemTypeId();
-}
-
-template <typename Derived, typename ... Comps>
-inline const Grynca::ComponentsMask& Grynca::System<Derived, Comps...>::neededComponentsMask()
-//static
-{
-	static ComponentsMask needed_comps_mask = ComponentsMaskCreator<Comps...>().mask;
-	return needed_comps_mask;
-}
-
-template <typename Derived, typename ... Comps>
-inline int& Grynca::System<Derived, Comps...>::_systemTypeId()
-//static
-{
-	static int _system_type_id = -1;		// -1 means not registered
-	return _system_type_id;
-}
 
 #endif /* SYSTEM_H_ */

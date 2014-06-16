@@ -13,8 +13,8 @@
 
 namespace Grynca
 {
-	typedef std::bitset<MAX_COMPONENTS> ComponentsMask;
-	typedef std::bitset<MAX_SYSTEMS> SystemsMask;
+    typedef std::bitset<MAX_COMPONENTS> ComponentsMaskBits;
+    typedef void (*DestroyFunc)(void*);
 }
 
 
