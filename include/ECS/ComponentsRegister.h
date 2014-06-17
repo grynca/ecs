@@ -62,10 +62,10 @@ namespace Grynca {
 
     template <typename Derived>
     static const ComponentTypeInfo& registerComponentType() {
-        ComponentsRegister::registerComponentType(Derived::typeId,
+        ComponentsRegister::registerComponentType(Derived::componentTypeId,
                                                   typeid(Derived).name(),
                                                   sizeof(Derived));
-        return ComponentsRegister::getComponentTypeInfo(Derived::typeId);
+        return ComponentsRegister::getComponentTypeInfo(Derived::componentTypeId);
     }
 }
 

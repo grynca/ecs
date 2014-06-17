@@ -15,7 +15,7 @@
 namespace Grynca {
     // fw
     class SystemBase;
-    struct EntityTypeInfo;
+    class EntityTypeInfo;
 
     class EntityBase {
     public:
@@ -29,7 +29,7 @@ namespace Grynca {
         bool isUpdatedBySystem(SystemBase* system);
         void setUpdatingBySystem(SystemBase* system, bool set);
 
-        const EntityTypeInfo& getTypeInfo();
+        EntityTypeInfo& getTypeInfo();
     protected:
         EntityBase(unsigned int entity_type_id) : entity_type_id_(entity_type_id) {}
 
@@ -58,7 +58,7 @@ namespace Grynca {
     protected:
         friend class EntitiesPool;
 
-        Entity() : EntityBase(Derived::typeId) {}
+        Entity() : EntityBase(Derived::entityTypeId) {}
 
         ComponentsTuple type_tuple_;
     };
@@ -72,7 +72,7 @@ namespace Grynca
 {
     // get component data by component_type_id
     inline void* EntityBase::get(unsigned int component_type_id) {
-        int offset = getTypeInfo().component_offsets[component_type_id];
+        int offset = getTypeInfo().getComponentOffsets()[component_type_id];
         if (offset == -1)
             return NULL;
         else
@@ -81,15 +81,15 @@ namespace Grynca
 
     template<typename ComponentType>
     inline ComponentType* EntityBase::get() {
-        return (ComponentType*)get(ComponentType::typeId);
+        return (ComponentType*)get(ComponentType::componentTypeId);
     }
 
-    inline const EntityTypeInfo& EntityBase::getTypeInfo() {
+    inline EntityTypeInfo &EntityBase::getTypeInfo() {
         return EntitiesRegister::getEntityTypeInfo(entity_type_id_);
     }
 
     inline bool EntityBase::canBeUpdatedBySystem(SystemBase* system) {
-        return (getTypeInfo().components_mask & system->neededComponentsMask()) == getTypeInfo().components_mask;
+        return (getTypeInfo().getComponentsMask() & system->neededComponentsMask()) == getTypeInfo().getComponentsMask();
     }
 
     inline bool EntityBase::isUpdatedBySystem(SystemBase* system) {

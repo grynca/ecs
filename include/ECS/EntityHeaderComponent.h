@@ -9,7 +9,7 @@ namespace Grynca {
     class EntityHeaderComponent : public Component<EntityHeaderComponent>
     {
     public:
-        static const unsigned int typeId = 0;
+        static const unsigned int componentTypeId = 0;
 
         uint32_t guid;
         unsigned int pool_chunk;

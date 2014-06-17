@@ -31,6 +31,7 @@ namespace Grynca
 
         EntityBase* getEntity(unsigned int guid);
 
+        // only one instance of systemtype can be created
         template <typename SystemType, typename ... ConstructionArgs>
         SystemType* createSystem(ConstructionArgs... args);
 
@@ -58,7 +59,7 @@ namespace Grynca {
      : guid_source_(0)
     {
         for (unsigned int i=0; i<EntitiesRegister::registeredTypesCount(); i++) {
-            const EntityTypeInfo& eti = EntitiesRegister::getEntityTypeInfo(i);
+            EntityTypeInfo& eti = EntitiesRegister::getEntityTypeInfo(i);
             pools_.push_back(NULL);
             if (eti.isRegistered()) {
                 pools_.back() = new EntitiesPool(&eti);
@@ -82,7 +83,7 @@ namespace Grynca {
     {
         uint32_t newent_guid = guid_source_;
         ++guid_source_;
-        EntitiesPool* p = pools_[EntityType::typeId];
+        EntitiesPool* p = pools_[EntityType::entityTypeId];
         EntityType* newent = p->createNewEntity<EntityType>(newent_guid, args...);
         guid_to_entity_map_[newent_guid] = newent;
         return newent;
@@ -91,7 +92,7 @@ namespace Grynca {
     inline void ECSManager::destroyEntity(EntityBase* entity)
     {
         guid_to_entity_map_.erase(entity->get<EntityHeaderComponent>()->guid);
-        pools_[entity->getTypeInfo().type_id]->destroyEntity(entity);
+        pools_[entity->getTypeInfo().getTypeId()]->destroyEntity(entity);
     }
 
     inline EntityBase *ECSManager::getEntity(unsigned int guid) {
@@ -103,18 +104,24 @@ namespace Grynca {
 
     template <typename SystemType, typename ... ConstructionArgs>
     inline SystemType* ECSManager::createSystem(ConstructionArgs... args) {
-        SystemType* new_system = new SystemType(args...);
-        new_system->system_id_ = (unsigned int)systems_.size();
-        systems_.push_back(new_system);
-        return new_system;
+        if (SystemType::systemTypeId >= systems_.size())
+            systems_.resize(SystemType::systemTypeId+1, NULL);
+        assert(!systems_[SystemType::systemTypeId] && "System of this type already present in this ECSManager.");
+        systems_.back() = new SystemType(args...);
+        systems_.back()->system_id_ = SystemType::systemTypeId;
+        return (SystemType*)systems_.back();
     }
 
     // updates entities with all systems (in order they were registered)
     inline void ECSManager::updateAll(double dt) {
         for (unsigned int i=0; i< systems_.size(); i++) {
+            if (!systems_[i])
+                continue;
             for (unsigned int j=0; j< pools_.size(); j++) {
-                if (pools_[j] && systems_[i]->isPoolCompatible(*pools_[j]))
+                if (pools_[j] &&  pools_[j]->getEntityTypeInfo().relevantSystems()[i]) {
+                    assert(systems_[i]->isPoolCompatible(*pools_[j]) && "System is not compatible with entity type.");
                     systems_[i]->updatePool(dt, *pools_[j]);
+                }
             }
         }
     }

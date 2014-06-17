@@ -27,6 +27,10 @@ CONFIG(debug,debug|release) {
   BUILD=release
 }
 
+#for profiling
+#QMAKE_CXXFLAGS_RELEASE += /Zi
+#QMAKE_LFLAGS_RELEASE += /DEBUG
+
 unix {
 #  QMAKE_CXXFLAGS_RELEASE += -O3 -fopenmp -D_GLIBCXX_PARALLEL
 #  QMAKE_LFLAGS_RELEASE += -fopenmp

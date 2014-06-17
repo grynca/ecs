@@ -20,7 +20,7 @@ float randf(float max) {
 class PositionComponent : public Grynca::Component<PositionComponent>
 {
 public:
-    static const unsigned int typeId = 1;
+    static const unsigned int componentTypeId = 1;
 
     PositionComponent() {
         //std::cout << "Constructing position component. " << std::endl;
@@ -45,7 +45,7 @@ REGISTER_COMPONENT_TYPE(PositionComponent);
 class VelocityComponent : public Grynca::Component<VelocityComponent>
 {
 public:
-    static const unsigned int typeId = 2;
+    static const unsigned int componentTypeId = 2;
 
     void set(double lv_x, double lv_y, double av) {
         this->lv_x = lv_x;
@@ -63,9 +63,19 @@ public:
 };
 REGISTER_COMPONENT_TYPE(VelocityComponent);
 
+
+class MegaComponent : public Grynca::Component<MegaComponent> {
+public:
+    static const unsigned int componentTypeId = 3;
+    int data[300];
+};
+REGISTER_COMPONENT_TYPE(MegaComponent);
+
 class MovementSystem : public Grynca::System<MovementSystem, PositionComponent, VelocityComponent>
 {
 public:
+    static const unsigned int systemTypeId = 1;
+
     void updateEntity(double dt, Grynca::EntityBase* entity)
     {
         PositionComponent* pos = entity->get<PositionComponent>();
@@ -77,19 +87,16 @@ public:
     }
 };
 
-class MegaComponent : public Grynca::Component<MegaComponent> {
-public:
-    static const unsigned int typeId = 3;
-    int data[300];
-};
-REGISTER_COMPONENT_TYPE(MegaComponent);
-
 class TestEntity : public Grynca::Entity<TestEntity,
         // in memory stored reversaly : EntityHeaderComponent, VelocityComponent, PositionComponent ...
                           PositionComponent, VelocityComponent>
 {
 public:
-    static const unsigned int typeId = 1;
+    static const unsigned int entityTypeId = 1;
+
+    static void staticSetup() {
+        getTypeInfoStatic().setRelevantSystem<MovementSystem>();
+    }
 
     TestEntity() {
         //std::cout << "creating test entity" << std::endl;
@@ -107,7 +114,7 @@ REGISTER_ENTITY_TYPE(TestEntity);
 
 int main()
 {
-    std::cout << "TestEntity size= " << TestEntity::getTypeInfoStatic().entity_size << std::endl;
+    std::cout << "TestEntity size= " << TestEntity::getTypeInfoStatic().getEntitySize() << std::endl;
 
     unsigned int n_ents = 1000000;
     srand((unsigned int)time(NULL));

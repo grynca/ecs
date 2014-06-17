@@ -61,7 +61,7 @@ namespace Grynca {
 
 namespace Grynca {
     inline bool SystemBase::isPoolCompatible(const EntitiesPool &pool) {
-        return (pool.getEntityTypeInfo().components_mask & needed_components_) == needed_components_;
+        return (pool.getEntityTypeInfo().getComponentsMask() & needed_components_) == needed_components_;
     }
 
     // pool must be compatible

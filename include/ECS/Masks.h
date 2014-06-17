@@ -21,7 +21,7 @@ namespace Grynca {
     public:
         ComponentsMask()
         {
-            assert(ComponentsRegister::getComponentTypeInfo(FirstC::typeId).isRegistered()
+            assert(ComponentsRegister::getComponentTypeInfo(FirstC::componentTypeId).isRegistered()
                     && "Component must be registered.");
             Parent::bits.set(FirstC::getTypeInfoStatic().type_id);
         }

@@ -22,7 +22,7 @@ namespace Grynca {
     {
     public:
         static const ComponentTypeInfo& getTypeInfoStatic() {
-            return ComponentsRegister::getComponentTypeInfo(Derived::typeId);
+            return ComponentsRegister::getComponentTypeInfo(Derived::componentTypeId);
         }
 
         // default destruction, can be shadowed and changed in derived class

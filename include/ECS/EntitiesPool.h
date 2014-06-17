@@ -15,15 +15,15 @@
 
 namespace Grynca {
     // fw
-    struct EntityTypeInfo;
+    class EntityTypeInfo;
     class EntityBase;
 
     class EntitiesPool {
     public:
-        EntitiesPool(const EntityTypeInfo* eti);
+        EntitiesPool(EntityTypeInfo* eti);
 
         ~EntitiesPool();
-        const EntityTypeInfo& getEntityTypeInfo()const  { return *eti_; }
+        EntityTypeInfo& getEntityTypeInfo()const  { return *eti_; }
 
         template <typename EntityType, typename ... Args>
         EntityType* createNewEntity(unsigned int guid, Args ... args);
@@ -40,14 +40,13 @@ namespace Grynca {
         void loopEntities(double dt, Callback c);
 
     private:
-
         EntityBase* entityPlace_(unsigned int chunk_id, unsigned int chunk_pos);
 
         void createNewChunk_();
 
         std::vector< std::vector<uint8_t> > pool_chunks_;
         std::vector<size_t> chunk_sizes_;       // real occupied chunk sizes
-        const EntityTypeInfo* eti_;
+        EntityTypeInfo* eti_;
         // callback when entity is moved to new place (on removal of some other entity)
         std::function<void(uint32_t/*guid*/, EntityBase*)> entity_moved_func_;
     };
@@ -58,7 +57,7 @@ namespace Grynca {
 #include "EntityHeaderComponent.h"
 
 namespace Grynca {
-    inline EntitiesPool::EntitiesPool(const EntityTypeInfo* eti)
+    inline EntitiesPool::EntitiesPool(EntityTypeInfo *eti)
      : eti_(eti),
        entity_moved_func_(nullptr)
     {
@@ -87,7 +86,7 @@ namespace Grynca {
         // create with placement new
         EntityType* newent = new (entityPlace_(chid, (unsigned int)chunk_sizes_[chid])) EntityType(args...);
         // set entity header
-        EntityHeaderComponent* ehc = (EntityHeaderComponent*)((EntityBase*)newent)->get(EntityHeaderComponent::typeId);
+        EntityHeaderComponent* ehc = ((EntityBase*)newent)->get<EntityHeaderComponent>();
         ehc->guid = guid;
         ehc->pool_chunk = chid;
         ehc->chunk_position = (unsigned int)chunk_sizes_[chid];
@@ -98,13 +97,13 @@ namespace Grynca {
     inline void EntitiesPool::destroyEntity(EntityBase* entity) {
         EntityHeaderComponent* ehc = entity->get<EntityHeaderComponent>();
         // call entity's destructor
-        eti_->destroy_func(entity);
+        eti_->destroyFunc(entity);
 
         unsigned int last_chunk_ent_pos = (unsigned int)chunk_sizes_[ehc->pool_chunk]-1;
         if (ehc->chunk_position < last_chunk_ent_pos) {
             // move last entity in chunk to freed place
             void *last_ent = entityPlace_(ehc->pool_chunk, last_chunk_ent_pos);
-            memcpy(entity, last_ent, eti_->entity_size);
+            memcpy(entity, last_ent, eti_->getEntitySize());
             if (entity_moved_func_ != nullptr) {
                 entity_moved_func_(entity->get<EntityHeaderComponent>()->guid, entity);
             }
@@ -130,12 +129,12 @@ namespace Grynca {
     }
 
     inline EntityBase* EntitiesPool::entityPlace_(unsigned int chunk_id, unsigned int chunk_pos) {
-        return (EntityBase*)&(pool_chunks_[chunk_id][chunk_pos*eti_->entity_size]);
+        return (EntityBase*)&(pool_chunks_[chunk_id][chunk_pos*eti_->getEntitySize()]);
     }
 
     inline void EntitiesPool::createNewChunk_() {
         pool_chunks_.push_back(std::vector<uint8_t>());
-        pool_chunks_.back().resize(POOL_CHUNK_CAPACITY * eti_->entity_size);
+        pool_chunks_.back().resize(POOL_CHUNK_CAPACITY * eti_->getEntitySize());
         chunk_sizes_.push_back(0);
     }
 }

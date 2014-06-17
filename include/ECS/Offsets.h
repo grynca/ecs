@@ -12,7 +12,7 @@ namespace Grynca {
 
         template<typename T, typename ...Ts>
         static size_t offsets_(const TypeTuple<T, Ts...>&, std::vector<std::pair<unsigned int, size_t>>& v) {
-            unsigned int type_id = T::typeId;
+            unsigned int type_id = T::componentTypeId;
             std::pair<unsigned int, size_t> p;
             size_t my_offset = offsets_(TypeTuple<Ts...>(), v);
             size_t parent_offset = my_offset + sizeof(T);
