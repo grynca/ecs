@@ -82,7 +82,8 @@ namespace Grynca {
     {
         uint32_t newent_guid = guid_source_;
         ++guid_source_;
-        EntityType* newent = pools_[EntityType::typeId]->createNewEntity<EntityType>(newent_guid, args...);
+        EntitiesPool* p = pools_[EntityType::typeId];
+        EntityType* newent = p->createNewEntity<EntityType>(newent_guid, args...);
         guid_to_entity_map_[newent_guid] = newent;
         return newent;
     }
