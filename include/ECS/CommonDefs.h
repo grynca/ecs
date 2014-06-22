@@ -5,8 +5,8 @@
  *      Author: lutze
  */
 
-#ifndef COMMONDEFS_H_
-#define COMMONDEFS_H_
+#ifndef GRYNCACOMMONDEFS_H_
+#define GRYNCACOMMONDEFS_H_
 
 #include <bitset>
 #include "EcsConfig.h"
@@ -14,9 +14,10 @@
 namespace Grynca
 {
     typedef std::bitset<MAX_COMPONENTS> ComponentsMaskBits;
+    typedef std::bitset<MAX_SYSTEMS> SystemsMaskBits;
     typedef void (*DestroyFunc)(void*);
 }
 
 
 
-#endif /* COMMONDEFS_H_ */
+#endif /* GRYNCACOMMONDEFS_H_ */

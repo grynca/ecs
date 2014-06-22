@@ -5,51 +5,65 @@
  *      Author: lutza
  */
 
-#ifndef COMPONENTSREGISTER_H
-#define COMPONENTSREGISTER_H
+#ifndef GRYNCACOMPONENTSREGISTER_H
+#define GRYNCACOMPONENTSREGISTER_H
 
 #include <vector>
 #include <cassert>
 #include <stdint.h>
 #include <string>
 #include <typeinfo>
+#include <iostream>
 #include "CommonDefs.h"
 
 namespace Grynca {
 
     class ComponentTypeInfo {
     public:
-        ComponentTypeInfo() : type_id(-1), component_size(0) {}
+        ComponentTypeInfo() : type_id(-1) {}
 
         bool isRegistered()const { return type_id!=-1; }
 
         int type_id;
         std::string name;
         size_t component_size;
+        DestroyFunc destroy_func;
     };
 
     class ComponentsRegister {
     public:
-        static const ComponentTypeInfo& getComponentTypeInfo(unsigned int type_id) {
+        static const ComponentTypeInfo& get(unsigned int type_id) {
             assert(type_id < register_().size());
             return register_()[type_id];
         }
-        static size_t registeredComponentTypesCount() { return register_().size(); }
+        static size_t registeredTypesCount() { return register_().size(); }
 
-        static void registerComponentType(const unsigned int component_type_id,
-                                          const std::string& name,
-                                          const size_t component_size)
+        template <typename Derived>
+        static void registerComponentType(const std::string& name)
         {
-            if (component_type_id >= register_().size()) {
-                register_().resize(component_type_id+1);
+            if (isRegistered(name))
+                // when including .h with REGISTER macro in multiple translation units
+                return;
+            if (Derived::typeId >= register_().size()) {
+                register_().resize(Derived::typeId+1);
             }
-            assert(!register_()[component_type_id].isRegistered() && "Component type with this type-id is already registered.");
+            assert(!register_()[Derived::typeId].isRegistered()
+                    && "Component type with this type-id is already registered.");
 #ifndef NDEBUG
-            std::cout << "[ComponentsRegister] Registering component name " << name << " to id " << component_type_id << std::endl;
+            std::cout << "[ComponentsRegister] Registering component " << name << " to id " << Derived::typeId << std::endl;
 #endif
-            register_()[component_type_id].type_id = component_type_id;
-            register_()[component_type_id].name = name;
-            register_()[component_type_id].component_size = component_size;
+            register_()[Derived::typeId].type_id = Derived::typeId;
+            register_()[Derived::typeId].name = name;
+            register_()[Derived::typeId].component_size = sizeof(Derived);
+            register_()[Derived::typeId].destroy_func = Derived::destroy;
+        }
+
+        static bool isRegistered(const std::string& type_name) {
+            for(unsigned int i=0; i<registeredTypesCount(); i++) {
+                if (get(i).name == type_name)
+                    return true;
+            }
+            return false;
         }
 
     protected:
@@ -59,23 +73,14 @@ namespace Grynca {
             return reg;
         }
     };
-
-    template <typename Derived>
-    static const ComponentTypeInfo& registerComponentType() {
-        ComponentsRegister::registerComponentType(Derived::componentTypeId,
-                                                  typeid(Derived).name(),
-                                                  sizeof(Derived));
-        return ComponentsRegister::getComponentTypeInfo(Derived::componentTypeId);
-    }
 }
 
-// must access typeInfo (static member in templated class) or compiler will optimize it out
 #define REGISTER_COMPONENT_TYPE(CType) static class CType##_Registrator_{ \
     public: \
     CType##_Registrator_() { \
-        Grynca::registerComponentType<CType>(); \
+        Grynca::ComponentsRegister::registerComponentType<CType>(#CType); \
     } \
-} CType##registrator_;
+} CType##registrator_
 
 
-#endif /* COMPONENTSREGISTER_H */
+#endif /* GRYNCACOMPONENTSREGISTER_H */

@@ -5,16 +5,17 @@
  *      Author: lutze
  */
 
-#ifndef ECSCONFIG_H_
-#define ECSCONFIG_H_
+#ifndef GRYNCAECSCONFIG_H_
+#define GRYNCAECSCONFIG_H_
 
 namespace Grynca
 {
     const unsigned int POOL_CHUNK_CAPACITY = 1024;
 	const unsigned int MAX_COMPONENTS = 64;
+    const unsigned int MAX_SYSTEMS = 64;
 }
 
 
 
 
-#endif /* ECSCONFIG_H_ */
+#endif /* GRYNCAECSCONFIG_H_ */

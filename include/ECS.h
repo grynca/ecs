@@ -5,9 +5,11 @@
  *      Author: lutza
  */
 
-#ifndef ECS_H_
-#define ECS_H_
+#ifndef GRYNCAECS_H_
+#define GRYNCAECS_H_
 
 #include "ECS/ECSManager.h"
+#include "ECS/InternalComponents.h"
+#include "ECS/Components.h"
 
-#endif /* ECS_H_ */
+#endif /* GRYNCAECS_H_ */

@@ -1,7 +1,7 @@
-#ifndef ENTITYHEADERCOMPONENT_H
-#define ENTITYHEADERCOMPONENT_H
+#ifndef GRYNCAENTITYHEADERCOMPONENT_H
+#define GRYNCAENTITYHEADERCOMPONENT_H
 
-#include "ComponentsRegister.h"
+#include "InternalComponents.h"
 #include "Component.h"
 
 namespace Grynca {
@@ -9,14 +9,13 @@ namespace Grynca {
     class EntityHeaderComponent : public Component<EntityHeaderComponent>
     {
     public:
-        static const unsigned int componentTypeId = 0;
+        static const unsigned int typeId = InternalComponentIds::EntityHeaderComponentId;
 
         uint32_t guid;
-        unsigned int pool_chunk;
-        unsigned int chunk_position;
+        // systems currently updating this entity
+        SystemsMaskBits update_mask;
     };
-
     REGISTER_COMPONENT_TYPE(EntityHeaderComponent);
 }
 
-#endif // ENTITYHEADERCOMPONENT_H
+#endif // GRYNCAENTITYHEADERCOMPONENT_H

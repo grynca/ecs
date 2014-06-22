@@ -1,0 +1,28 @@
+#ifndef TYPEINFO_H
+#define TYPEINFO_H
+
+#include <vector>
+#include <string>
+
+template <typename Derived>
+class TypeRegister {
+public:
+    unsigned int id;
+    std::string name;
+    size_t size;
+    
+    
+    template <typename Type>
+    static TypeInfo& create() {
+        Type::typeId
+        Type::typeName
+        sizeof(Type)
+    }
+
+    static std::vector<TypeInfo>& get() {
+        static std::vector<TypeInfo> reg;
+        return reg;
+    }
+};
+
+#endif // TYPEINFO_H

@@ -5,24 +5,23 @@
  *      Author: lutze
  */
 
-#ifndef SYSTEM_H_
-#define SYSTEM_H_
+#ifndef GRYNCASYSTEM_H_
+#define GRYNCASYSTEM_H_
 
 #include <cassert>
-#include <functional>
 #include "CommonDefs.h"
 
 namespace Grynca {
     // fw
-    class EntitiesPool;
+    class EntityTypePool;
     class EntityBase;
 
     class SystemBase {
     public:
-        bool isPoolCompatible(const EntitiesPool& pool);
+        bool isPoolCompatible(const EntityTypePool& pool);
 
         // pool must be compatible
-        void updatePool(double dt, EntitiesPool& pool);
+        virtual void updatePool(double dt, EntityTypePool* pool) = 0;
 
         unsigned int systemId() { return system_id_; }
         const ComponentsMaskBits& neededComponentsMask() { return needed_components_; }
@@ -31,7 +30,6 @@ namespace Grynca {
 
         virtual ~SystemBase() {}
 
-        std::function<void(double, EntityBase*)> update_func_;
         // components needed by this system
         ComponentsMaskBits needed_components_;
     private:
@@ -47,36 +45,36 @@ namespace Grynca {
     public:
         System();
 
-//        // dummy create, can be shadowed with derived class
-//        void create() {}
-
         virtual ~System() {}
+
+        void updatePool(double dt, EntityTypePool* pool) override {
+            EntityBase eb;
+            eb.pool_ = pool;
+            DynamicComponentsPool& dcp = pool->dynamicComponents();
+            for (eb.chunk_id_ =0; eb.chunk_id_<dcp.chunksCount(); ++eb.chunk_id_)
+            for (eb.chunk_pos_ =0; eb.chunk_pos_<dcp.entitiesInChunk(eb.chunk_id_); ++eb.chunk_pos_) {
+                ((Derived*)this)->updateEntity(dt, eb);
+            }
+        }
     };
 
 }
 
-#include "EntitiesPool.h"
 #include "Entity.h"
-#include "Masks.h"
+#include "TypeIdMask.h"
 
 namespace Grynca {
-    inline bool SystemBase::isPoolCompatible(const EntitiesPool &pool) {
-        return (pool.getEntityTypeInfo().getComponentsMask() & needed_components_) == needed_components_;
-    }
-
-    // pool must be compatible
-    inline void SystemBase::updatePool(double dt, EntitiesPool& pool) {
-        pool.loopEntities(dt, update_func_);
+    inline bool SystemBase::isPoolCompatible(const EntityTypePool &pool) {
+        return (pool.getTypeInfo().allComponentsMask() & needed_components_) == needed_components_;
     }
 
     template <typename Derived, typename... Comps>
     inline System<Derived, Comps...>::System()
     {
-        update_func_ = std::bind(&Derived::updateEntity, (Derived*)this, std::placeholders::_1, std::placeholders::_2);
-        needed_components_ = Grynca::ComponentsMask<Comps...>().bits;   // construct needed components mask
+        needed_components_ = Grynca::TypeIdMask<MAX_SYSTEMS, Comps...>().bits;   // construct needed components mask
     }
 
 }
 
 
-#endif /* SYSTEM_H_ */
+#endif /* GRYNCASYSTEM_H_ */
