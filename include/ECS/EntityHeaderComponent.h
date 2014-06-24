@@ -9,7 +9,7 @@ namespace Grynca {
     class EntityHeaderComponent : public Component<EntityHeaderComponent>
     {
     public:
-        static const unsigned int typeId = InternalComponentIds::EntityHeaderComponentId;
+        static const unsigned int typeId = ECSInternalComponentIds::EntityHeaderComponentId;
 
         uint32_t guid;
         // systems currently updating this entity

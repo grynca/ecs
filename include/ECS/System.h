@@ -71,7 +71,7 @@ namespace Grynca {
     template <typename Derived, typename... Comps>
     inline System<Derived, Comps...>::System()
     {
-        needed_components_ = Grynca::TypeIdMask<MAX_SYSTEMS, Comps...>().bits;   // construct needed components mask
+        needed_components_ = TypeIdMask<MAX_SYSTEMS, Comps...>().bits;   // construct needed components mask
     }
 
 }

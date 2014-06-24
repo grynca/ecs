@@ -3,11 +3,11 @@
 
 namespace Grynca {
 
-    enum InternalComponentIds {
+    enum ECSInternalComponentIds {
         EntityTypeHeaderComponentId = 0,
         EntityHeaderComponentId = 1,
     // ====================================
-        InternalComponentIdsEnd
+        ECSInternalComponentIdsEnd
     };
 
 }

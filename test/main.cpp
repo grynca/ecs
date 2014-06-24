@@ -13,8 +13,10 @@
 #include <list>
 #include "ECS.h"
 
+using namespace Grynca;
+
 enum MyComponentIds {
-    PositionComponentId = Grynca::InternalComponentIdsEnd,
+    PositionComponentId = ECSInternalComponentIds::ECSInternalComponentIdsEnd,
     VelocityComponentId,
     SpriteComponentId,
 
@@ -33,7 +35,7 @@ float randf(float max) {
     return static_cast<float>(rand())/static_cast<float>(RAND_MAX/max);
 }
 
-class PositionComponent : public Grynca::Component<PositionComponent>
+class PositionComponent : public Component<PositionComponent>
 {
 public:
     static const unsigned int typeId = PositionComponentId;
@@ -58,7 +60,7 @@ public:
 };
 REGISTER_COMPONENT_TYPE(PositionComponent);
 
-class VelocityComponent : public Grynca::Component<VelocityComponent>
+class VelocityComponent : public Component<VelocityComponent>
 {
 public:
     static const unsigned int typeId = VelocityComponentId;
@@ -80,7 +82,7 @@ public:
 REGISTER_COMPONENT_TYPE(VelocityComponent);
 
 
-class SpriteComponent : public Grynca::Component<SpriteComponent> {
+class SpriteComponent : public Component<SpriteComponent> {
 public:
     static const unsigned int typeId = SpriteComponentId;
 
@@ -88,12 +90,12 @@ public:
 };
 REGISTER_COMPONENT_TYPE(SpriteComponent);
 
-class MovementSystem : public Grynca::System<MovementSystem, PositionComponent, VelocityComponent>
+class MovementSystem : public System<MovementSystem, PositionComponent, VelocityComponent>
 {
 public:
     static const unsigned int typeId = MovementSystemId;
 
-    void updateEntity(double dt, Grynca::EntityBase& entity)
+    void updateEntity(double dt, EntityBase& entity)
     {
         PositionComponent* pc = entity.get<PositionComponent>();
         VelocityComponent* vc = entity.get<VelocityComponent>();
@@ -104,15 +106,15 @@ public:
 };
 
 
-class TestEntity : public Grynca::Entity<TestEntity>,
-                   public Grynca::StaticComponents<SpriteComponent>,
-                   public Grynca::DynamicComponents<PositionComponent, VelocityComponent>
+class TestEntity : public Entity<TestEntity>,
+                   public StaticComponents<SpriteComponent>,
+                   public DynamicComponents<PositionComponent, VelocityComponent>
 {
 public:
     static const unsigned int typeId = TestEntityId;
 
-    static void staticInit(Grynca::ECSManager& manager, Grynca::StaticComponentsPool& statics) {
-        auto ethc = statics.get<Grynca::EntityTypeHeaderComponent>();
+    static void staticInit(ECSManager& manager, StaticComponentsPool& statics) {
+        auto ethc = statics.get<EntityTypeHeaderComponent>();
         // set relevant systems
         ethc->setRelevantSystem<MovementSystem>(true);
 
@@ -140,12 +142,12 @@ int main()
     unsigned int n_ents = 1000000;
     srand((unsigned int)time(NULL));
 
-    Grynca::ECSManager manager;
+    ECSManager manager;
     manager.createSystem<MovementSystem>();
 
     manager.doStaticInit();
 
-    std::list<Grynca::EntityBase*> entities;
+    std::list<EntityBase*> entities;
     clock_t t = clock();
     for (unsigned int i=0; i<n_ents; i++)
     {

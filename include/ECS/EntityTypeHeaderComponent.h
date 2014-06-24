@@ -10,7 +10,7 @@ namespace Grynca {
     class EntityTypeHeaderComponent : public Component<EntityTypeHeaderComponent>
     {
     public:
-        static const unsigned int typeId = InternalComponentIds::EntityTypeHeaderComponentId;
+        static const unsigned int typeId = ECSInternalComponentIds::EntityTypeHeaderComponentId;
 
         template <typename SysType>
         void setRelevantSystem(bool set) { relevant_systems[SysType::typeId] = set; }

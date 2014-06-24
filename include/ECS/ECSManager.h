@@ -97,7 +97,6 @@ namespace Grynca {
     template <typename EntityType, typename ... ConstructionArgs>
     inline EntityType* ECSManager::createEntity(EntityType* newent, ConstructionArgs... args)
     {
-        std::cout << "creating entity" << std::endl;
         uint32_t newent_guid = guid_source_;
         ++guid_source_;
         EntityTypePool* p = pools_[EntityType::typeId];

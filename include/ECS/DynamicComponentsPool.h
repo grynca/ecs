@@ -121,7 +121,7 @@ namespace Grynca {
         --chunks_[chunk_id].occupied;
 
         if (move_last) {
-            uint32_t moved_guid = get<Grynca::EntityHeaderComponent>(chunk_id, chunk_pos)->guid;
+            uint32_t moved_guid = get<EntityHeaderComponent>(chunk_id, chunk_pos)->guid;
             return moved_guid;
         }
         else
