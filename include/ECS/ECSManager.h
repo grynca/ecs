@@ -28,7 +28,7 @@ namespace Grynca
         void ECSManager::doStaticInit();
 
         template <typename EntityType, typename ... ConstructionArgs>
-        EntityType* createEntity(ConstructionArgs... args);
+        EntityType* createEntity(EntityType* newent, ConstructionArgs... args);
 
         void destroyEntity(EntityBase *entity);
 
@@ -95,21 +95,20 @@ namespace Grynca {
     }
 
     template <typename EntityType, typename ... ConstructionArgs>
-    inline EntityType* ECSManager::createEntity(ConstructionArgs... args)
+    inline EntityType* ECSManager::createEntity(EntityType* newent, ConstructionArgs... args)
     {
+        std::cout << "creating entity" << std::endl;
         uint32_t newent_guid = guid_source_;
         ++guid_source_;
         EntityTypePool* p = pools_[EntityType::typeId];
         auto ent_pos = p->createNewEntity();
 
-        EntityType* newent = new EntityType();
         newent->pool_ = p;
         newent->chunk_id_ = ent_pos.first;
         newent->chunk_pos_ = ent_pos.second;
         newent->setGuid_(newent_guid);
-        newent->create(args...);
-
         guid_to_entity_map_[newent_guid] = newent;
+        newent->create(args...);
         return newent;
     }
 

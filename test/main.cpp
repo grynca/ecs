@@ -149,7 +149,7 @@ int main()
     clock_t t = clock();
     for (unsigned int i=0; i<n_ents; i++)
     {
-        TestEntity* te = manager.createEntity<TestEntity>();
+        TestEntity* te = manager.createEntity(new TestEntity);
         entities.push_back(te);
     }
 

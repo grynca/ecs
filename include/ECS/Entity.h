@@ -49,6 +49,8 @@ namespace Grynca {
     template <typename Derived>
     class Entity : public EntityBase {
     public:
+        virtual ~Entity() {}
+
         static const EntityTypeInfo& getTypeInfo() {
             return EntitiesRegister::get(Derived::typeId);
         }
