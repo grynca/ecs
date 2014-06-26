@@ -3,25 +3,63 @@
 
 #include "TypeIdMask.h"
 #include "CommonDefs.h"
-#include "InternalComponents.h"
 
 namespace Grynca {
 
-    template <typename ... Comps>
-    class StaticComponents {
+    template<typename ...Comps>
+    class Components {
     public:
-        static ComponentsMaskBits getStaticComponentsMask() {
-            static TypeIdMask<MAX_COMPONENTS, Comps..., EntityTypeHeaderComponent> m;
+        static ComponentsMaskBits getComponentsMask() {
+            static TypeIdMask<MAX_COMPONENTS, Comps...> m;
             return m.bits;
         }
     };
 
-    template <typename ... Comps>
+    template <typename ...Comps>
     class DynamicComponents {
     public:
+        static ComponentsMaskBits getStaticComponentsMask() {
+            return ComponentsMaskBits();
+        }
         static ComponentsMaskBits getDynamicComponentsMask() {
-            static TypeIdMask<MAX_COMPONENTS, Comps..., EntityHeaderComponent> m;
-            return m.bits;
+            return Components<Comps...>::getComponentsMask();
+        }
+    };
+
+    template <typename ...Comps>
+    class StaticComponents {
+    public:
+        static ComponentsMaskBits getStaticComponentsMask() {
+            return Components<Comps...>::getComponentsMask();
+        }
+        static ComponentsMaskBits getDynamicComponentsMask() {
+            return ComponentsMaskBits();
+        }
+    };
+
+    template <typename ...ComponentPacks> class ComponentMasksCombinator;
+
+    template <>
+    class ComponentMasksCombinator<> {
+    public:
+        static ComponentsMaskBits getStaticComponentsMask() {
+            return ComponentsMaskBits();
+        }
+        static ComponentsMaskBits getDynamicComponentsMask() {
+            return ComponentsMaskBits();
+        }
+    };
+
+    template <typename FirstComponentPack, typename ... Rest>
+    class ComponentMasksCombinator<FirstComponentPack, Rest...> : public ComponentMasksCombinator<Rest...> {
+    public:
+        using Parent = ComponentMasksCombinator<Rest...>;
+
+        static ComponentsMaskBits getStaticComponentsMask() {
+            return FirstComponentPack::getStaticComponentsMask() | Parent::getStaticComponentsMask();
+        }
+        static ComponentsMaskBits getDynamicComponentsMask() {
+            return FirstComponentPack::getDynamicComponentsMask() | Parent::getDynamicComponentsMask();
         }
     };
 }

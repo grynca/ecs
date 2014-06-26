@@ -77,6 +77,12 @@ namespace Grynca {
             register_()[Derived::typeId].destroy_func_ = Derived::destroy;
             register_()[Derived::typeId].static_init_func_ = Derived::staticInit;
 
+#ifndef	NDEBUG
+            std::cout << " Static Components: " <<std::endl
+                      << " " << Derived::getStaticComponentsMask() << std::endl;
+            std::cout << " Dynamic Components: " <<std::endl
+                      << " " << Derived::getDynamicComponentsMask() << std::endl;
+#endif
             assert((Derived::getStaticComponentsMask()&Derived::getDynamicComponentsMask())==0
                    && "Entity cant contain bots static and dynamic component of same type.");
         }

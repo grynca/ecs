@@ -34,7 +34,6 @@ namespace Grynca {
     protected:
         EntityBase() {}
         virtual ~EntityBase() {}
-
     private:
         friend class ECSManager;
         template<typename Derived, typename... Comps> friend class System;
@@ -46,7 +45,9 @@ namespace Grynca {
 
     };
 
-    template <typename Derived>
+
+    template <typename Derived,
+              typename ... ComponentPacks>
     class Entity : public EntityBase {
     public:
         virtual ~Entity() {}
@@ -62,7 +63,45 @@ namespace Grynca {
 
         // default no-op staticinit, can be shadowed in Derived class
         static void staticInit(ECSManager& /*manager*/, StaticComponentsPool& /*pool*/) {}
+
+        static ComponentsMaskBits getDynamicComponentsMask() {
+            return ComponentMasksCombinator<ComponentPacks...>::getDynamicComponentsMask()
+                    // each entity has internal entity header dynamic component
+                    | DynamicComponents<EntityHeaderComponent>::getDynamicComponentsMask();
+        }
+        static ComponentsMaskBits getStaticComponentsMask() {
+            return ComponentMasksCombinator<ComponentPacks...>::getStaticComponentsMask()
+                    // each entity type has internal entity type header static component
+                    | StaticComponents<EntityTypeHeaderComponent>::getStaticComponentsMask();
+        }
     };
+
+    template <typename Derived,
+              typename Parent,
+              typename ... ComponentPacks>
+    class EntityExtend : public Parent {
+    public:
+        virtual ~EntityExtend() {}
+
+        static const EntityTypeInfo& getTypeInfo() {
+            return EntitiesRegister::get(Derived::typeId);
+        }
+
+        // calls entity's destructor
+        static void destroy(void* ent) {
+            ((Derived*)ent)->~Derived();
+        }
+
+        static ComponentsMaskBits getDynamicComponentsMask() {
+            return ComponentMasksCombinator<ComponentPacks...>::getDynamicComponentsMask()
+                    | Parent::getDynamicComponentsMask();
+        }
+        static ComponentsMaskBits getStaticComponentsMask() {
+            return ComponentMasksCombinator<ComponentPacks...>::getStaticComponentsMask()
+                    | Parent::getStaticComponentsMask();
+        }
+    };
+
 }
 #include "EntityTypePool.h"
 #include "EntitiesRegister.h"

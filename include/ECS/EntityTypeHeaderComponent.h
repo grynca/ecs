@@ -12,8 +12,18 @@ namespace Grynca {
     public:
         static const unsigned int typeId = ECSInternalComponentIds::EntityTypeHeaderComponentId;
 
-        template <typename SysType>
-        void setRelevantSystem(bool set) { relevant_systems[SysType::typeId] = set; }
+
+        template <typename System> void setRelevantSystems(bool set=true)
+        {
+            relevant_systems[System::typeId] = set;
+        }
+
+        template <typename FirstSystem, typename SecondSystem, typename ...Rest>
+        void setRelevantSystems(bool set=true)
+        {
+            setRelevantSystems<FirstSystem>(set);
+            setRelevantSystems<SecondSystem, Rest...>(set);
+        }
 
 
         // systems allowed to update this entity type (must be compatible with its components)

@@ -78,6 +78,8 @@ namespace Grynca {
 
     inline ECSManager::~ECSManager()
     {
+        while(!guid_to_entity_map_.empty())
+            destroyEntity(guid_to_entity_map_.begin()->second);
         for (unsigned int i=0; i<pools_.size(); i++) {
             delete pools_[i];
         }

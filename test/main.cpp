@@ -23,7 +23,8 @@ enum MyComponentIds {
 };
 
 enum MyEntitiesIds {
-    TestEntityId
+    TestEntityId,
+    TestEntity2Id
 };
 
 enum MySystemIds {
@@ -90,7 +91,8 @@ public:
 };
 REGISTER_COMPONENT_TYPE(SpriteComponent);
 
-class MovementSystem : public System<MovementSystem, PositionComponent, VelocityComponent>
+class MovementSystem : public System<MovementSystem,
+                                     PositionComponent, VelocityComponent>
 {
 public:
     static const unsigned int typeId = MovementSystemId;
@@ -106,21 +108,16 @@ public:
 };
 
 
-class TestEntity : public Entity<TestEntity>,
-                   public StaticComponents<SpriteComponent>,
-                   public DynamicComponents<PositionComponent, VelocityComponent>
+class TestEntity : public Entity<TestEntity,
+                                 DynamicComponents<PositionComponent, VelocityComponent> >
 {
 public:
     static const unsigned int typeId = TestEntityId;
 
     static void staticInit(ECSManager& manager, StaticComponentsPool& statics) {
-        auto ethc = statics.get<EntityTypeHeaderComponent>();
         // set relevant systems
-        ethc->setRelevantSystem<MovementSystem>(true);
-
-        // set some other type data e.g. sprite for rendering ...
-        SpriteComponent* sc = statics.get<SpriteComponent>();
-        sc->spritepath = "SpriteImage.png";
+        statics.get<EntityTypeHeaderComponent>()
+                ->setRelevantSystems<MovementSystem>();
     }
 
     void create() {
@@ -129,13 +126,38 @@ public:
         get<VelocityComponent>()->set(randf(3), randf(3), randf(3));
     }
 
-    ~TestEntity() {
+    virtual ~TestEntity() {
         //std::cout << "Destroying test entity with guid= " << guid() << std::endl;
     }
 };
 
 REGISTER_ENTITY_TYPE(TestEntity);
 
+class TestEntity2 : public EntityExtend<TestEntity2,
+                                        TestEntity,
+                                        StaticComponents<SpriteComponent> >
+{
+public:
+    static const unsigned int typeId = TestEntity2Id;
+
+    static void staticInit(ECSManager& manager, StaticComponentsPool& statics) {
+        TestEntity::staticInit(manager, statics);
+        // set some other type data e.g. sprite for rendering ...
+        SpriteComponent* sc = statics.get<SpriteComponent>();
+        sc->spritepath = "SpriteImage.png";
+    }
+
+    void create() {
+        //std::cout << "creating test entity2" << std::endl;
+        TestEntity::create();
+    }
+
+    virtual ~TestEntity2() {
+        //std::cout << "Destroying test entity with guid= " << guid() << std::endl;
+    }
+};
+
+REGISTER_ENTITY_TYPE(TestEntity2);
 
 int main()
 {
@@ -151,7 +173,7 @@ int main()
     clock_t t = clock();
     for (unsigned int i=0; i<n_ents; i++)
     {
-        TestEntity* te = manager.createEntity(new TestEntity);
+        TestEntity* te = manager.createEntity(new TestEntity2);
         entities.push_back(te);
     }
 
